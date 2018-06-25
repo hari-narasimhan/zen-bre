@@ -1,8 +1,27 @@
 // zen-bre grammar
 // Support parsing of zen business rule language
-// Inspired and adapted from 
+// Inspired and adapted from
 // https://github.com/dmajda/pegjs/blob/master/examples/javascript.pegjs
 
+/**
+rule "Hello, World"
+# define rule parameters
+parameters
+ name : string
+ age : number
+ sex : string
+when
+	# this is first condition
+then
+else when
+	# This is second condition
+then
+else when
+then
+else when
+then
+end
+*/
 Start
   = __ rule:Rule __ { return rule }
 
@@ -294,13 +313,32 @@ Zs = [\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000]
 
 // Tokens
 
-RuleToken = "rule" !IdentifierPart
-WhenToken = "when" !IdentifierPart
-ThenToken = "then" !IdentifierPart
-EndToken = "end" !IdentifierPart
+RuleToken = "rule"
+ParametersToken = "parameters"
+ColonToken = ":"
+ElseToken = "else"
+WhenToken = "when"
+ThenToken = "then"
+EndToken = "end"
 NullToken = "null"
 TrueToken = "true"
 FalseToken = "false"
+
+// Types
+IntegerToken = "integer"
+NumberToken = "number"
+CurrencyToken = "currency"
+BooleanToken = "boolean"
+StringToken = "string"
+DatetimeToken = "datetime"
+
+ParameterType
+  = IntegerToken
+  / NumberToken
+  / CurrencyToken
+  / BooleanToken
+  / StringToken
+  / DatetimeToken
 
 // Skipped
 
@@ -313,9 +351,7 @@ _
 // Automatic Semicolon Insertion
 
 EOS
-  = __ ";"
-  / _ SingleLineComment? LineTerminatorSequence
-  / _ &"}"
+  = _ SingleLineComment? LineTerminatorSequence
   / __ EOF
 
 EOF
@@ -324,4 +360,24 @@ EOF
 // Expressions
 
 Rule
- = RuleToken __ name:StringLiteral EOS
+ = RuleToken
+ __ name:StringLiteral
+ __ ParameterList
+ __ WhenBlock
+ __ EndToken
+ EOS
+
+ParameterDefinition
+ = Identifier __ ColonToken __ ParameterType
+
+ParameterList
+  = ParametersToken EOS
+  (__ ParameterDefinition)+
+
+WhenBlock
+	= WhenToken
+    __ ThenToken
+    __ (ElseToken _ WhenBlock)*
+    / WhenToken
+    __ ThenToken
+
